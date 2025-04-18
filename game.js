@@ -1,5 +1,6 @@
 let player, bullets, enemies, cursors, spaceKey, scoreText;
 let score = 0;
+let lastFired = 0;
 
 const config = {
   type: Phaser.AUTO,
@@ -27,73 +28,65 @@ function preload() {
 }
 
 function create() {
-  // Player setup
   player = this.physics.add.sprite(400, 550, 'player');
   player.setCollideWorldBounds(true);
 
-  // Controls
   cursors = this.input.keyboard.createCursorKeys();
   spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
-  // Bullet group
   bullets = this.physics.add.group({
     defaultKey: 'bullet',
-    maxSize: 10
+    maxSize: 30
   });
 
-  // Enemy group
   enemies = this.physics.add.group();
 
-  // Score display
   scoreText = this.add.text(16, 16, 'Score: 0', {
     fontSize: '24px',
     fill: '#ffffff'
   });
 
-  // Enemy spawner
   this.time.addEvent({
     delay: 1000,
     callback: () => {
       const x = Phaser.Math.Between(50, 750);
       const enemy = enemies.create(x, 0, 'enemy');
       enemy.setVelocityY(100);
-      enemy.setCollideWorldBounds(false);
     },
     loop: true
   });
 
-  // Collision detection
   this.physics.add.overlap(bullets, enemies, hitEnemy, null, this);
 }
 
-function update() {
-  // Player movement
+function update(time, delta) {
   player.setVelocityX(0);
+
   if (cursors.left.isDown) {
     player.setVelocityX(-200);
   } else if (cursors.right.isDown) {
     player.setVelocityX(200);
   }
 
-  // Shoot
-  if (Phaser.Input.Keyboard.JustDown(spaceKey)) {
+  // Tembakan dengan cooldown 250ms
+  if (spaceKey.isDown && time > lastFired) {
     const bullet = bullets.get(player.x, player.y - 20);
+
     if (bullet) {
-      bullet.setActive(true);
-      bullet.setVisible(true);
-      bullet.body.velocity.y = -400;
+      bullet.enableBody(true, player.x, player.y - 20, true, true);
+      bullet.setVelocityY(-400);
+      lastFired = time + 250;
     }
   }
 
-  // Destroy off-screen bullets
+  // Nonaktifkan peluru yang keluar layar
   bullets.children.each(function (b) {
     if (b.active && b.y < 0) {
-      b.setActive(false);
-      b.setVisible(false);
+      b.disableBody(true, true);
     }
   }, this);
 
-  // Check if any enemy reaches bottom
+  // Jika musuh tembus ke bawah layar
   enemies.children.iterate(enemy => {
     if (enemy && enemy.y > 600) {
       this.scene.restart();
@@ -106,6 +99,4 @@ function update() {
 function hitEnemy(bullet, enemy) {
   bullet.disableBody(true, true);
   enemy.disableBody(true, true);
-  score += 10;
-  scoreText.setText('Score: ' + score);
-}
+

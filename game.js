@@ -1,7 +1,7 @@
 // FULL GAME WITH MENU, BOSS, MOBILE CONTROL, WEAPON UPGRADE
 let player, bullets, enemies, boss, cursors, spaceKey, scoreText, livesText, background;
 let score = 0;
-let lives = 3;
+let lives = 100;
 let lastFired = 0;
 let shootSound, explosionSound;
 let multiShot = false;
